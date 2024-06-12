@@ -32,7 +32,10 @@ vClusters <- function(mat,clMethod,nClust,nclustMax, validation,
   measures <- matrix(0,nrow=length(measNames),ncol=length(nClust))
   rownames(measures) <- measNames
   colnames(measures) <- nClust
-
+  stab_list <- vector("list", length(nClust))
+  names(stab_list) <- nClust
+  
+  
   switch(clMethod,
          hierarchical = {
            clusterObj <- hclust(Dist,method)
@@ -115,9 +118,26 @@ vClusters <- function(mat,clMethod,nClust,nclustMax, validation,
       if(verbose & "biological"%in%validation)
         print(paste("Finished BHI,", clMethod, nc, "clusters"))      
     }
-
+    
+    
+    
     ## stability validation measures
     if ("stability"%in%validation | "biological"%in%validation) {
+      
+      
+      ### MW Edit ###
+      # To return the underlying column-specific validation measures, as a metric of variable importance #
+      stab=data.frame(col=colnames(mat))
+      
+      
+      if("stability"%in%validation) {
+        stab$APN <- stab$AD <- stab$ADM <- stab$FOM <- NA
+      }
+      if("biological"%in%validation) {
+        stab$BSI <- NA
+      }
+      
+      
       co.del <- 0 ## for use in verbose printing of progress
       for (del in 1:ncol(mat)) {
         matDel <- mat[,-del]               ## matDel <- as.matrix(matDel)
@@ -172,6 +192,11 @@ vClusters <- function(mat,clMethod,nClust,nclustMax, validation,
 
         if("stability"%in%validation) {
           stabmeas <- stability(mat, Dist, del, cluster, clusterDel)
+          stab$APN[[del]] <- stabmeas["APN"]
+          stab$AD[[del]] <- stabmeas["AD"]
+          stab$ADM[[del]] <- stabmeas["ADM"]
+          stab$FOM[[del]] <- stabmeas["FOM"]
+
           measures["APN",ind] <- measures["APN",ind] + stabmeas["APN"]
           measures["AD",ind]  <- measures["AD",ind]  + stabmeas["AD"]
           measures["ADM",ind] <- measures["ADM",ind] + stabmeas["ADM"]
@@ -181,6 +206,7 @@ vClusters <- function(mat,clMethod,nClust,nclustMax, validation,
           tmp <- BSI(cluster,clusterDel,annotation=annotation,
                      names=rownames(mat), category=GOcategory, goTermFreq=goTermFreq,
                      dropEvidence=dropEvidence)
+          stab$BSI[[del]] <- tmp
           measures["BSI",ind] <- measures["BSI",ind] + tmp
         }
         ## VERBOSE printing
@@ -216,6 +242,8 @@ vClusters <- function(mat,clMethod,nClust,nclustMax, validation,
     } #END of STABILITY measures
     ind <- ind+1  #ind tracks number clusters
     ## if(verbose) print(paste("Finished with", nc, "clusters"))
+    
+    stab_list[[nc]] <- stab
   } #END OF NC LOOP
   
   if ("stability"%in%validation) {
@@ -228,6 +256,6 @@ vClusters <- function(mat,clMethod,nClust,nclustMax, validation,
     measures["BSI",] <- measures["BSI",]/ncol(mat)
   }
   
-  list(clusterObj=clusterObj, measures=measures)
+  list(clusterObj=clusterObj, measures=measures,stab_list=stab_list)
 }
 

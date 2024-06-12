@@ -101,6 +101,11 @@ these can be downloaded from Bioconductor (www.bioconductor.org)")
 
   clusterObjs <- vector("list",length(clMethods))
   names(clusterObjs) <- clMethods
+  
+  # MW add stab objs
+  stabObjs <- vector("list",length(clMethods))
+  names(stabObjs) <- clMethods
+  
 
   measures <- c(if("stability"%in%validation) c("APN","AD","ADM","FOM"),
                 if("internal"%in%validation) c("Connectivity","Dunn","Silhouette"),
@@ -115,6 +120,8 @@ these can be downloaded from Bioconductor (www.bioconductor.org)")
                         GOcategory=GOcategory, goTermFreq=goTermFreq, neighbSize=neighbSize,
                         dropEvidence=dropEvidence, verbose=verbose, ...)
     clusterObjs[[i]] <- cvalid$clusterObj
+    stabObjs[[i]] <- cvalid$stab_list
+    
     validMeasures[,,i] <- cvalid$measures
   }
 
@@ -123,7 +130,7 @@ these can be downloaded from Bioconductor (www.bioconductor.org)")
     warning("rownames for data not specified, using 1:nrow(data)")
   }
 
-  new("clValid", clusterObjs=clusterObjs, measures=validMeasures, measNames=measures,
+  new("clValid", clusterObjs=clusterObjs, stabObjs=stabObjs,measures=validMeasures, measNames=measures,
       clMethods=clMethods, labels=rownames(mat), nClust=nClust, validation=validation,
       metric=metric,method=method, neighbSize=neighbSize,  GOcategory=GOcategory,
       goTermFreq=goTermFreq, annotation=annotation,
